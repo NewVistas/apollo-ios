@@ -25,13 +25,11 @@ public final class GraphQLResponse<Operation: GraphQLOperation> {
       executor.cacheKeyForObject = cacheKeyForObject
       
       let mapper = GraphQLSelectionSetMapper<Operation.Data>()
-      let normalizer = GraphQLResultNormalizer()
-      let dependencyTracker = GraphQLDependencyTracker()
       
       return firstly {
-        try executor.execute(selections: Operation.Data.selections, on: dataEntry, withKey: rootCacheKey(for: operation), variables: operation.variables, accumulator: zip(mapper, normalizer, dependencyTracker))
-        }.map { (data, records, dependentKeys) in
-          (GraphQLResult(data: data, errors: errors, source: .server, dependentKeys: dependentKeys), records)
+        try executor.execute(selections: Operation.Data.selections, on: dataEntry, withKey: rootCacheKey(for: operation), variables: operation.variables, accumulator: mapper)
+        }.map { data in
+            (GraphQLResult(data: data, errors: errors, source: .server, dependentKeys: Set()), [:])
       }
     } else {
       return Promise(fulfilled: (GraphQLResult(data: nil, errors: errors, source: .server, dependentKeys: nil), nil))
